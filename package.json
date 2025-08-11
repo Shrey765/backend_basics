@@ -1,0 +1,16 @@
+{
+  "name": "backend_basics",
+  "version": "1.0.0",
+  "description": "a new journey to understand backend basics",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "javaScript",
+    "backend",
+    "shrey"
+  ],
+  "author": "Shrey Kumar",
+  "license": "ISC"
+}
