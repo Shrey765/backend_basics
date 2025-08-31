@@ -16,7 +16,10 @@ app.use(cookieParser())
 //routes import
 import router from './routes/user.routes.js'
 
-//router declaraation
+//router declaration
 app.use('/api/v1/users', router)
+app.use('/api/v1/status', (req, res) => {
+    res.send("server is live at port ", process.env.PORT)
+})
 
 export default app;

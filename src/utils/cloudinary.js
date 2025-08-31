@@ -13,15 +13,20 @@ const uploadOnCloundinary = async (localFilePath) => {
             return null
         }
         const respose = await cloudinary.uploader.upload(localFilePath,
-            {resoucre_type: "auto"}
+            {resource_type: "auto"}
         );
 
         console.log("file is uploaded on cloudinary");
-        console.log(respose);
         return respose;
 
     } catch (error) {
-        fs.unlinkSync(localFilePath) // remove the locally saved temporary file as the upload operation got failed
+        console.log("error cloudinary se nikla")
+        console.error("Error message:", error.message);
+        console.error("Full error object:", error); // helps debug further
+        
+        if (fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+        }
         return null;
     }
 }

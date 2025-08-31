@@ -17,11 +17,13 @@ const registerUser = asyncHandler( async (req, res) => {
     // return res
 
     const {fullName, username, email, password} = req.body;
-    console.log("user name = ",fullName)
+    console.log("user name = ", fullName);
+    console.log("user email = ", email);
+    console.log("user username = ", username);
+    console.log("user password = ", password);
 
     if(
-        [fullName, email, username, password].some((field) => 
-            !field?.trim() === "")
+        [fullName, email, username, password].some((field) => !field?.trim() === "")
     ){
         throw new ApiError(400, "All fields are required");
     }
@@ -32,18 +34,15 @@ const registerUser = asyncHandler( async (req, res) => {
 
 
 
-    const existingUser = User.findOneAndReplace({
+    const existingUser = await User.findOne({
         $or: [{username}, {email}]
     });
     if(existingUser){
         throw new ApiError(409, "User already esxists with same username or email");
     }
 
-    const avatarLocalPath = req.file?.avatar[0]?.path;    //avatar has various properties like, .png, .jpeg, jpg, path etc so we are checking if avatar is there then we access it's path property
-    const coverImageLocalPath = req.file?.coverImage[0]?.path;
-    if(req.file?.avatar){
-        console.log("avatar : ", req.file.avatar);
-    }
+    const avatarLocalPath = req.files?.avatar[0]?.path;    //avatar has various properties like, .png, .jpeg, jpg, path etc so we are checking if avatar is there then we access it's path property
+    const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar image is required");
@@ -51,8 +50,10 @@ const registerUser = asyncHandler( async (req, res) => {
 
     const avatar = await uploadOnCloundinary(avatarLocalPath);
     const coverImage = await uploadOnCloundinary(coverImageLocalPath);
+    console.log("avatar = ", avatar);
+    console.log("coverImage = ", coverImage);
 
-    const user = awaitUser.create({
+    const user = await User.create({
         fullName,
         avatar: avatar.url,
         coverImage: coverImage?.url || "",
