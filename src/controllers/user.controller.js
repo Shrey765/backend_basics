@@ -4,6 +4,20 @@ import {User} from "../models/user.models.js";
 import uploadOnCloundinary from "../utils/cloudinary.js";
 import {ApiResponse} from '../utils/ApiResponse.js'
 
+const generateAccessAndRefreshTokens = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+        user.refreshToken = refreshToken;
+        await user.save({validateBeforeSave: false});
+
+        return {accessToken, refreshToken};
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while generating tokens");
+    }
+}
+
 const registerUser = asyncHandler( async (req, res) => {
     // algorithm to register user
     // get user details from frontend
@@ -42,7 +56,11 @@ const registerUser = asyncHandler( async (req, res) => {
     }
 
     const avatarLocalPath = req.files?.avatar[0]?.path;    //avatar has various properties like, .png, .jpeg, jpg, path etc so we are checking if avatar is there then we access it's path property
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    let coverImageLocalPath;
+
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){ // we can also do this check for avatar as well !!
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
 
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar image is required");
@@ -75,4 +93,58 @@ const registerUser = asyncHandler( async (req, res) => {
     )
 })
 
-export {registerUser}
+const loginUser = async (req, res) => {
+    // algorithm to login user
+    //req body se data leke ao (email, username, password)
+    // find user
+    // password check
+    // access token, refresh token
+    // send cookies
+    const {email, username, password} = req.body;
+
+    if(!username || !email){
+        throw new ApiError(400, "username or email is required to login");
+    }
+
+    const actualUser = await User.findOne({$or: [{email}, {username}]});
+    if(!actualUser){
+        throw new ApiError(404, "No user found with this email or username");
+    }
+
+    const isPasswordMAtch = await actualUser.isPasswordCorrect(password);
+    if(!isPasswordMAtch){
+        throw new ApiError(401, "Password is incorrect");
+    } 
+
+    console.log("actual user = ", actualUser);
+    const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(actualUser._id);
+    console.log("actual User = ", actualUser);
+    
+    const options = {
+        httpOnly: true,
+        secure: true,
+    }
+
+    return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+        new ApiResponse(200, {
+            user: actualUser,
+            accessToken,
+            refreshToken
+        },
+        "User logged in successfully"
+        )
+    )
+}
+
+const logOutUser = asyncHandler( async (req, res) => {
+    // logout algorithm
+    // get user id from req.user
+
+
+})
+
+export {registerUser, loginUser, logOutUser}
